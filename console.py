@@ -2,7 +2,7 @@
 """Create a class call HBNBCommmand"""
 
 
-import cmd, json, shlex
+import cmd, shlex
 from models.base_model import BaseModel
 from models.user import User
 from models.state import State
@@ -13,8 +13,12 @@ from models.review import Review
 from models import storage
 
 class HBNBCommand(cmd.Cmd):
-    """Defines the command interpreter"""
+    """Create the command interpreter"""
     prompt = '(hbnb) '
+
+    """
+    Classes dictionary to use with the commands
+    """
     __classes_dict = {
         "BaseModel": BaseModel,
         "User": User,
@@ -24,19 +28,6 @@ class HBNBCommand(cmd.Cmd):
         "Place": Place,
         "Review": Review
         }
-    __place_dict = {
-        "city_id": str,
-        "user_id": str,
-        "name": str,
-        "description": str,
-        "number_rooms": int,
-        "number_bathrooms": int,
-        "max_guest": int,
-        "price_by_night": int,
-        "latitude": float,
-        "longitude": float,
-        "amenity_ids": []
-    }
 
     def do_quit(self, arg):
         """Exit the program"""
@@ -48,49 +39,43 @@ class HBNBCommand(cmd.Cmd):
         return True
 
     def cmdloop(self):
+        """so that th console stays in a loop"""
         try:
             super().cmdloop()
         except KeyboardInterrupt:
             return True
 
     def do_create(self, arg):
-        """Create a new instance"""
+        """Create a new instance with the dictionary of classes"""
         if not arg:
             print("** class name missing **")
+        elif arg not in self.__classes_dict: # check if the argument is in the dictionary of classes
+            print("** class doesn't exist **")
         else:
-            try:
-                new_instance = eval(f"{arg}()")
-                new_instance.save()
-                print(new_instance.id)
-            except NameError:
-                print("** class doesn't exist **")
+            new_instance = self.__classes_dict[arg]()
+            new_instance.save()
+            print(f"{new_instance.id}")
 
     def do_show(self, arg):
         """Display the instance"""
-        arg = shlex.split(arg)
+        arg = shlex.split(arg) # function to break it down into of individual arguments
         if not arg:
             print("** class name missing **")
-        elif arg[0] != 'BaseModel':
+        elif arg[0] not in self.__classes_dict:
             print("** class doesn't exist **")
         elif len(arg) < 2:
             print("** instance id missing **")
         else:
-            try:
-                with open('file.json', 'r') as file:
-                    dict_from_json = json.load(file)
-                    name_id = arg[0] + "." + arg[1]
-                    if name_id in dict_from_json:
-                        obj_dict = dict_from_json[name_id]
-                        obj = BaseModel(**obj_dict)
-                        print("{}".format(obj))
-                    else:
-                        print("** no instance found **")
-            except FileNotFoundError:
-                pass
+            dict_from_storage = storage.all() # get the dictionary from storage
+            name_id = arg[0] + "." + arg[1]
+            if name_id in dict_from_storage:
+                print(f"{dict_from_storage[name_id]}")
+            else:
+                print("** no instance found **")
 
     def do_destroy(self, arg):
         """Delete the instance"""
-        arg = shlex.split(arg)
+        arg = shlex.split(arg) # function to break it down into of individual arguments
         if not arg:
             print("** class name missing **")
         elif arg[0] not in self.__classes_dict:
@@ -110,10 +95,10 @@ class HBNBCommand(cmd.Cmd):
         """print all dictionary"""
         list_obj = []
         if not arg:
-            for obj in storage.all().values():
+            for obj in storage.all().values(): # get dictionary from th storage with the values
                 list_obj.append(str(obj))
             print(list_obj)
-        elif arg not in self.__classes_dict:
+        elif arg not in self.__classes_dict: # check if the argument is in the dictionary of classes
             print("** class doesn't exist **")
         else:
             for obj in storage.all().values():
@@ -123,7 +108,7 @@ class HBNBCommand(cmd.Cmd):
 
     def do_update(self, arg):
         """update <class name> <id> <attribute name> <attribute value>"""
-        arg = shlex.split(arg)
+        arg = shlex.split(arg)  # function to break it down into of individual arguments
         total_arguments = len(arg)
         argc_dict = {
             0: "** class name missing **",
@@ -132,7 +117,7 @@ class HBNBCommand(cmd.Cmd):
             3: "** value missing **"
             }
 
-        if total_arguments in argc_dict:  # Prints error messages for argc
+        if total_arguments in argc_dict:  # Prints error messages for argc_dict
             print(f"{argc_dict[total_arguments]}")
         else:
             if arg[0] not in self.__classes_dict:  # Check if class exists
@@ -154,20 +139,6 @@ class HBNBCommand(cmd.Cmd):
                     obj.save()  # Save new update date and storage changes
                 else:
                     print("** no instance found **")
-
-    def count(self, arg):
-        """Prints the total number of instaces of a class"""
-        list_obj = []
-        if not arg:
-            for obj in storage.all().values():
-                list_obj.append(obj)
-            if len(list_obj) > 0:
-                print(f"** class doesn't exit **")
-            else:
-                for obj in storage.all().values():
-                    if type(obj).__name__ == arg:
-                        list_obj.append(str(obj))
-                print(f"{len(list_obj)}")
 
     def emptyline(self):
         """Do nothing on empty line"""
