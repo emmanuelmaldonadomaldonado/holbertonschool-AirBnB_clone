@@ -11,6 +11,7 @@ class User(BaseModel):
     FileStorage to manage serialization and
     deserialization of User
     """
+
     email = ""
     password = ""
     first_name = ""
