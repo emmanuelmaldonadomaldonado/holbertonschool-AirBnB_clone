@@ -27,23 +27,36 @@ class FileStorage:
             json.dump(serialized_objects, f)
     
     def reload(self):
-        """
-        deserializes the JSON file to __objects
-        """
-        data_dict = {}
-        classes = {
-            "BaseModel": BaseModel,
-            "User": User,
-            "State": State,
-            "City": City,
-            "Amenity": Amenity,
-            "Place": Place,
-            "Review": Review
-        }
+        from models.base_model import BaseModel
+        from models.user import User
+        from models.amenity import Amenity
+        from models.city import City
+        from models.place import Place
+        from models.review import Review
+        from models.state import State
+
         try:
-            with open(self.__file_path, 'r') as f:
-                data_dict = json.load(f)
-                for k, v in data_dict.items():
-                    self.__objects[k] = classes[v["__class__"]](**v)
+            with open(self.__file_path, "r") as file:
+                data = json.load(file)
+                for key, value in data.items():
+                    class_name = value["__class__"]
+                    if class_name == "BaseModel":
+                        cls = BaseModel
+                    elif class_name == "User":
+                        cls = User
+                    elif class_name == "Amenity":
+                        cls = Amenity
+                    elif class_name == "City":
+                        cls = City
+                    elif class_name == "Place":
+                        cls = Place
+                    elif class_name == "Review":
+                        cls = Review
+                    elif class_name == "State":
+                        cls = State
+                    else:
+                        continue
+                    obj = cls(**value)
+                    self.__objects[key] = obj
         except FileNotFoundError:
             pass
